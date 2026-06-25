@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>デュアルタスク課題 / Dual Task Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F3F5F0;
+    --surface: #FFFFFF;
+    --ink: #1C2526;
+    --ink-soft: #5C6B6C;
+    --line: #D8DCD3;
+    --teal: #1F6F64;
+    --teal-soft: #E3EEE8;
+    --amber: #C98A2E;
+    --rust: #B14A3D;
+    --rust-soft: #F6E7E4;
+    --panel: #14181A;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', system-ui, sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:40px 16px 64px;
+  }
+
+  .app{ width:100%; max-width:720px; }
+
+  .masthead{ text-align:center; margin-bottom:28px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin:0 0 10px;
+  }
+  .title{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size:32px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{ font-size:14px; color:var(--ink-soft); margin:0; }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:32px;
+    box-shadow:0 1px 2px rgba(28,37,38,0.04);
+  }
+
+  .phase.hidden{ display:none; }
+
+  .section-label{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin:0 0 14px;
+  }
+  .section + .section{ margin-top:30px; padding-top:26px; border-top:1px solid var(--line); }
+
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+
+  textarea{
+    width:100%;
+    min-height:130px;
+    resize:vertical;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:14px;
+    line-height:1.7;
+    color:var(--ink);
+    background:#FBFCFA;
+  }
+  textarea:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:2px solid var(--teal);
+    outline-offset:2px;
+  }
+
+  .hint{ font-size:12.5px; color:var(--ink-soft); margin:8px 0 0; }
+
+  .form-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:16px;
+  }
+  .field{ min-width:0; }
+
+  select, input[type=number], input[type=text]{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    font-family:'Work Sans', sans-serif;
+    font-size:14px;
+    background:#FBFCFA;
+    color:var(--ink);
+  }
+
+  .voice-row{ display:flex; gap:8px; }
+  .voice-row select{ flex:1; }
+
+  .btn{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    border:none;
+    border-radius:10px;
+    padding:13px 20px;
+    cursor:pointer;
+    transition:transform .08s ease, opacity .15s ease;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn-primary{ background:var(--teal); color:#fff; }
+  .btn-primary:hover:not(:disabled){ background:#195a51; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  .btn-ghost:hover{ background:#F2F2EE; }
+  .btn-secondary{ background:var(--ink); color:#fff; }
+  .btn-secondary:hover{ background:#0f1516; }
+
+  .actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:26px; }
+  .actions.split{ justify-content:space-between; flex-wrap:wrap; }
+
+  .error-box{
+    background:var(--rust-soft);
+    color:var(--rust);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:13px;
+    margin-top:14px;
+  }
+
+  .protocol-note{
+    background:var(--teal-soft);
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:13px;
+    color:#184942;
+    line-height:1.6;
+  }
+  .protocol-note b{ font-weight:600; }
+
+  /* ===== task phase ===== */
+  .task-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .trial-counter{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .mini-audio{ display:flex; gap:3px; align-items:center; height:16px; }
+  .mini-audio .bar{ width:3px; height:6px; background:var(--line); border-radius:2px; transition:background .2s; }
+  .mini-audio.active .bar{ background:var(--teal); }
+  .mini-audio.active .bar:nth-child(1){ animation:miniPulse .9s ease-in-out infinite; }
+  .mini-audio.active .bar:nth-child(2){ animation:miniPulse .7s ease-in-out infinite .1s; }
+  .mini-audio.active .bar:nth-child(3){ animation:miniPulse 1s ease-in-out infinite .05s; }
+  @keyframes miniPulse{ 0%,100%{height:6px;} 50%{height:14px;} }
+  @media (prefers-reduced-motion: reduce){ .mini-audio.active .bar{ animation:none !important; height:12px; } }
+
+  .stroop-panel{
+    background:var(--panel);
+    border-radius:12px;
+    min-height:300px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .timer-bar-track{
+    position:absolute;
+    top:0; left:0; right:0;
+    height:6px;
+    background:#2A302F;
+  }
+  .timer-bar-fill{
+    height:100%;
+    width:100%;
+    background:var(--teal);
+    transform-origin:left center;
+    transition:background .2s ease;
+  }
+  .timer-bar-fill.urgent{ background:#E0B23D; }
+  .timer-bar-fill.critical{ background:#E0453D; }
+  .stroop-word{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:64px;
+    letter-spacing:.02em;
+  }
+  .countdown{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:56px;
+    color:#fff;
+  }
+  .feedback-flash{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    font-size:90px;
+    font-weight:700;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .06s ease;
+    z-index:10;
+  }
+  .feedback-flash.show{ opacity:1; }
+  .feedback-flash.correct{ color:#3DAE5C; }
+  .feedback-flash.wrong{ color:#E0453D; }
+  .stroop-legend{
+    display:flex;
+    gap:10px;
+    padding:18px 16px;
+    border-top:1px solid #2A302F;
+    width:100%;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  .legend-chip{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:12.5px;
+    color:#CBD3CE;
+    background:#1D2224;
+    border-radius:8px;
+    padding:7px 11px;
+  }
+  .legend-dot{ width:9px; height:9px; border-radius:50%; }
+  .legend-key{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    background:#2A302F;
+    color:#fff;
+    border-radius:5px;
+    padding:1px 6px;
+    font-size:11px;
+  }
+  .abort-row{ text-align:center; margin-top:14px; }
+  .abort-row .hint{ margin-bottom:8px; }
+
+  /* ===== reorder phase ===== */
+  .reorder-copy{ font-size:14px; color:var(--ink-soft); margin-bottom:20px; line-height:1.6; }
+  .reorder-wrap{ display:flex; flex-direction:column; gap:20px; }
+
+  .slots-section p, .pool-section p{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-soft); margin:0 0 10px;
+  }
+  .slots-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+    gap:10px;
+  }
+  .slot{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    min-height:70px;
+  }
+  .slot-num{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:11px; color:var(--ink-soft);
+  }
+  .slot-box{
+    width:100%; flex:1;
+    border:2px dashed var(--line);
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    min-height:44px;
+    background:#FBFCFA;
+    transition:border-color .15s, background .15s;
+    cursor:pointer;
+  }
+  .slot-box:hover{ border-color:var(--teal); background:var(--teal-soft); }
+  .slot-box.filled{ border-style:solid; border-color:var(--teal); background:var(--teal-soft); cursor:pointer; }
+  .slot-box.filled:hover{ background:#d3e8e0; }
+
+  .word-chip{
+    font-size:15px; font-weight:600; color:var(--ink);
+    padding:0 6px; text-align:center;
+    pointer-events:none;
+  }
+
+  .pool-grid{
+    display:flex; flex-wrap:wrap; gap:10px;
+  }
+  .pool-chip{
+    font-size:15px; font-weight:600;
+    padding:10px 18px;
+    border:2px solid var(--line);
+    border-radius:10px;
+    background:#FBFCFA;
+    color:var(--ink);
+    cursor:pointer;
+    transition:border-color .12s, background .12s, transform .08s;
+    user-select:none;
+  }
+  .pool-chip:hover{ border-color:var(--teal); background:var(--teal-soft); }
+  .pool-chip:active{ transform:scale(.96); }
+  .pool-chip.selected{ border-color:var(--teal); background:var(--teal-soft); box-shadow:0 0 0 3px rgba(31,111,100,.2); }
+
+  /* ===== results phase ===== */
+  .participant-line{ font-size:13px; color:var(--ink-soft); margin-bottom:22px; }
+  .participant-line span{ color:var(--ink); font-weight:600; }
+  .score-row{ display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+  .score-box{ flex:1; min-width:120px; background:var(--teal-soft); border-radius:12px; padding:16px; text-align:center; }
+  .score-box .num{ font-family:'Fraunces', Georgia, serif; font-weight:600; font-size:26px; color:var(--teal); display:block; }
+  .score-box .label{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; }
+
+  .table-wrap{ max-height:240px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; margin-bottom:18px; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{
+    text-align:left; font-family:'IBM Plex Mono', ui-monospace, monospace; font-size:10.5px;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);
+    padding:8px 10px; border-bottom:1px solid var(--line); background:#FAFAF7;
+    position:sticky; top:0;
+  }
+  td{ padding:8px 10px; border-bottom:1px solid var(--line); }
+  td.mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+  .mark{ display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; font-size:11px; font-weight:600; }
+  .mark.ok{ background:var(--teal-soft); color:var(--teal); }
+  .mark.no{ background:var(--rust-soft); color:var(--rust); }
+  .blank{ color:var(--ink-soft); font-style:italic; }
+  .table-title{ font-size:13px; font-weight:600; margin:22px 0 10px; }
+
+  .foot-note{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:22px; line-height:1.6; }
+
+  @media (max-width:480px){
+    .card{ padding:20px; }
+    .title{ font-size:26px; }
+    .form-grid{ grid-template-columns:1fr; }
+    .recall-grid{ grid-template-columns:1fr; }
+    .stroop-word{ font-size:42px; }
+    .stroop-panel{ min-height:240px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="masthead">
+    <p class="eyebrow" id="phaseLabel" aria-live="polite">設定 — Setup</p>
+    <h1 class="title">デュアルタスク課題</h1>
+    <p class="subtitle">Stroop Task + Word Recall, run simultaneously</p>
+  </header>
+
+  <main class="card">
+
+    <!-- SETUP -->
+    <section id="setupPhase" class="phase">
+
+      <div class="section">
+        <p class="section-label">参加者情報 — Participant Info</p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="pId">参加者ID</label>
+            <input type="text" id="pId" placeholder="例: P01">
+          </div>
+          <div class="field">
+            <label for="pAge">年齢</label>
+            <input type="number" id="pAge" min="1" max="120" placeholder="例: 19">
+          </div>
+          <div class="field">
+            <label for="pGender">性別</label>
+            <select id="pGender">
+              <option value="">— 選択 —</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Non-binary</option>
+              <option>Prefer not to say</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="pGroup">言語グループ</label>
+            <select id="pGroup">
+              <option value="Monolingual">Monolingual</option>
+              <option value="Bilingual">Bilingual</option>
+            </select>
+          </div>
+          <div class="field" id="pLangField" style="grid-column:1 / -1; display:none;">
+            <label for="pLanguages">使用言語（Bilingualのみ）</label>
+            <input type="text" id="pLanguages" placeholder="例: Japanese, English">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <p class="section-label">ストロープ課題設定 — Stroop Settings</p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="numTrials">試行数</label>
+            <select id="numTrials">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="30">30</option>
+              <option value="40">40</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="stimDuration">刺激提示時間（ms）</label>
+            <select id="stimDuration">
+              <option value="0">キー入力まで（自己ペース）</option>
+              <option value="1500">1500 ms</option>
+              <option value="2000" selected>2000 ms（推奨）</option>
+              <option value="2500">2500 ms</option>
+              <option value="3000">3000 ms</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="itiInput">試行間インターバル（ms）</label>
+            <select id="itiInput">
+              <option value="300">300 ms</option>
+              <option value="500" selected>500 ms（推奨）</option>
+              <option value="800">800 ms</option>
+              <option value="1000">1000 ms</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">キー配置（固定）：あか(Red)=D　あお(Blue)=F　きいろ(Yellow)=J　みどり(Green)=K — 単語の意味は無視し、文字の色のキーを押してください。</p>
+      </div>
+
+      <div class="section">
+        <p class="section-label">単語再生課題設定 — Word Recall Settings</p>
+        <label for="wordsInput">読み上げる単語（1行に1語）</label>
+        <textarea id="wordsInput" spellcheck="false">ご飯
+パン
+水
+お茶
+牛乳
+りんご
+椅子
+時計</textarea>
+        <p class="hint" id="wordCount">8 語入力されています（最低3語）</p>
+
+        <div class="form-grid" style="margin-top:16px;">
+          <div class="field">
+            <label for="intervalInput">語の間隔（秒）</label>
+            <input type="number" id="intervalInput" min="0.5" max="5" step="0.5" value="1.5">
+          </div>
+          <div class="field">
+            <label for="repsInput">提示回数</label>
+            <input type="number" id="repsInput" min="1" max="5" step="1" value="2">
+          </div>
+        </div>
+        <div class="field" style="margin-top:16px;">
+          <label for="voiceSelect">音声</label>
+          <div class="voice-row">
+            <select id="voiceSelect"></select>
+            <button class="btn btn-ghost" id="testVoiceBtn" type="button">試聴</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <p class="protocol-note">
+          開始すると、単語の読み上げ（場合により複数回）と、ストロープ課題の試行が<b>同時に</b>進行します。参加者はストロープ課題に文字の色キーで反応しながら、単語を記憶してください。課題中は<b>ESCキー</b>でいつでも中止できます。
+        </p>
+      </div>
+
+      <div id="setupError"></div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="startBtn" type="button">デュアルタスク開始</button>
+      </div>
+    </section>
+
+    <!-- TASK (stroop + audio running together) -->
+    <section id="taskPhase" class="phase hidden">
+      <div class="task-top">
+        <span class="trial-counter" id="trialCounter" aria-live="polite">準備中…</span>
+        <div class="mini-audio" id="miniAudio" title="単語音声 再生中">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+      </div>
+
+      <div class="stroop-panel" id="stroopPanel">
+        <div class="timer-bar-track"><div class="timer-bar-fill" id="timerBar"></div></div>
+        <div class="countdown" id="countdownEl"></div>
+        <div class="stroop-word hidden" id="stroopWordEl"></div>
+        <div class="feedback-flash" id="feedbackFlash"></div>
+      </div>
+
+      <div class="stroop-legend">
+        <span class="legend-chip"><span class="legend-dot" style="background:#E0453D;"></span>あか (Red)<span class="legend-key">D</span></span>
+        <span class="legend-chip"><span class="legend-dot" style="background:#3D7FE0;"></span>あお (Blue)<span class="legend-key">F</span></span>
+        <span class="legend-chip"><span class="legend-dot" style="background:#E0B23D;"></span>きいろ (Yellow)<span class="legend-key">J</span></span>
+        <span class="legend-chip"><span class="legend-dot" style="background:#3DAE5C;"></span>みどり (Green)<span class="legend-key">K</span></span>
+      </div>
+
+      <div class="abort-row">
+        <p class="hint">文字の色に対応するキーを押してください。意味は無視してください。</p>
+        <button class="btn btn-ghost" id="abortBtn" type="button">中止して設定に戻る（ESC）</button>
+      </div>
+    </section>
+
+    <!-- REORDER -->
+    <section id="recallPhase" class="phase hidden">
+      <p class="reorder-copy">聞いた単語が下に表示されています。<b>聞いた順番</b>に並べ替えてください。<br>単語をクリックして選択し、上のスロットをクリックして配置します。配置済みの単語をクリックすると取り消せます。</p>
+      <div class="reorder-wrap">
+        <div class="slots-section">
+          <p>順番どおりに並べる — Place in order heard</p>
+          <div class="slots-grid" id="slotsGrid"></div>
+        </div>
+        <div class="pool-section">
+          <p>単語リスト — Word pool (click to select)</p>
+          <div class="pool-grid" id="poolGrid"></div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:24px;">
+        <button class="btn btn-ghost" id="clearOrderBtn" type="button">リセット</button>
+        <button class="btn btn-secondary" id="submitBtn" type="button">回答を確認する</button>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="resultsPhase" class="phase hidden">
+      <p class="participant-line" id="participantLine"></p>
+
+      <p class="table-title">ストロープ課題</p>
+      <div class="score-row">
+        <div class="score-box"><span class="num" id="sAccuracy">—</span><span class="label">正答率</span></div>
+        <div class="score-box"><span class="num" id="sMeanRT">—</span><span class="label">平均RT (ms)</span></div>
+        <div class="score-box"><span class="num" id="sEffect">—</span><span class="label">Stroop効果 (ms)</span></div>
+      </div>
+      <div class="score-row">
+        <div class="score-box"><span class="num" id="sCongruent">—</span><span class="label">一致条件 RT (ms)</span></div>
+        <div class="score-box"><span class="num" id="sIncongruent">—</span><span class="label">不一致条件 RT (ms)</span></div>
+        <div class="score-box"><span class="num" id="sCorrect">—</span><span class="label">正答数 / 全試行</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>単語</th><th>色</th><th>条件</th><th>反応</th><th>RT(ms)</th><th></th></tr></thead>
+          <tbody id="stroopBody"></tbody>
+        </table>
+      </div>
+
+      <p class="table-title">単語並べ替え課題</p>
+      <div class="score-row">
+        <div class="score-box"><span class="num" id="wPos">0/0</span><span class="label">正しい順番で正解</span></div>
+        <div class="score-box"><span class="num" id="wAny">0/0</span><span class="label">単語は合ってた（順不問）</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>順</th><th>正解</th><th>回答</th><th></th></tr></thead>
+          <tbody id="recallBody"></tbody>
+        </table>
+      </div>
+
+      <div class="actions split">
+        <button class="btn btn-ghost" id="exportBtn" type="button">CSVを書き出す</button>
+        <button class="btn btn-primary" id="nextBtn" type="button">次の参加者へ →</button>
+      </div>
+    </section>
+
+  </main>
+
+  <p class="foot-note">
+    音声合成にはお使いのブラウザの音声エンジンを使用します。日本語の音声が再生されない場合は、Google Chromeで最新版を使用し、オンライン接続を確認してください。反応時間はミリ秒単位でブラウザの内部時計から記録されます。
+  </p>
+</div>
+
+<script>
+(function(){
+
+  var STROOP_ITEMS = [
+    { key:'D', word:'あか',   label:'Red',    color:'#E0453D' },
+    { key:'F', word:'あお',   label:'Blue',   color:'#3D7FE0' },
+    { key:'J', word:'きいろ', label:'Yellow', color:'#E0B23D' },
+    { key:'K', word:'みどり', label:'Green',  color:'#3DAE5C' }
+  ];
+
+  var state = {
+    participant: {},
+    stroop: { numTrials:20, stimDuration:2000, iti:500 },
+    word: { words:[], intervalSec:1.5, reps:2, voice:null },
+    order: [],
+    trials: [],
+    recallRows: [],
+    recallSummary: null
+  };
+  var cancelRequested = false;
+  var audioFinished = false;
+
+  // ---------- elements ----------
+  var phaseLabel = document.getElementById('phaseLabel');
+
+  var pGroup = document.getElementById('pGroup');
+  var pLangField = document.getElementById('pLangField');
+
+  var wordsInput = document.getElementById('wordsInput');
+  var wordCount = document.getElementById('wordCount');
+  var intervalInput = document.getElementById('intervalInput');
+  var repsInput = document.getElementById('repsInput');
+  var voiceSelect = document.getElementById('voiceSelect');
+  var testVoiceBtn = document.getElementById('testVoiceBtn');
+  var setupError = document.getElementById('setupError');
+  var startBtn = document.getElementById('startBtn');
+
+  var trialCounter = document.getElementById('trialCounter');
+  var miniAudio = document.getElementById('miniAudio');
+  var stroopPanel = document.getElementById('stroopPanel');
+  var countdownEl = document.getElementById('countdownEl');
+  var stroopWordEl = document.getElementById('stroopWordEl');
+  var timerBar = document.getElementById('timerBar');
+  var feedbackFlash = document.getElementById('feedbackFlash');
+  var abortBtn = document.getElementById('abortBtn');
+
+  var slotsGrid = document.getElementById('slotsGrid');
+  var poolGrid  = document.getElementById('poolGrid');
+  var submitBtn = document.getElementById('submitBtn');
+
+  var participantLine = document.getElementById('participantLine');
+  var stroopBody = document.getElementById('stroopBody');
+  var recallBody = document.getElementById('recallBody');
+  var exportBtn = document.getElementById('exportBtn');
+  var nextBtn = document.getElementById('nextBtn');
+
+  var phases = {
+    setup: document.getElementById('setupPhase'),
+    task: document.getElementById('taskPhase'),
+    recall: document.getElementById('recallPhase'),
+    results: document.getElementById('resultsPhase')
+  };
+  var phaseLabels = {
+    setup: '設定 — Setup',
+    task: '実施中 — Task Running',
+    recall: '解答 — Recall',
+    results: '結果 — Results'
+  };
+
+  function setPhase(name){
+    Object.keys(phases).forEach(function(key){
+      phases[key].classList.toggle('hidden', key !== name);
+    });
+    phaseLabel.textContent = phaseLabels[name];
+  }
+
+  pGroup.addEventListener('change', function(){
+    pLangField.style.display = pGroup.value === 'Bilingual' ? 'block' : 'none';
+  });
+
+  // ---------- shared helpers ----------
+  function sleep(ms){ return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function normalize(s){ return (s || '').trim(); }
+
+  function parseWords(text){
+    var raw = text.split(/[\n,、]/).map(function(w){ return w.trim(); }).filter(function(w){ return w.length > 0; });
+    var seen = {}; var deduped = [];
+    raw.forEach(function(w){ if (!seen[w]){ seen[w] = true; deduped.push(w); } });
+    return deduped;
+  }
+
+  function updateWordCount(){
+    var n = parseWords(wordsInput.value).length;
+    wordCount.textContent = n + ' 語入力されています（最低3語）';
+  }
+  wordsInput.addEventListener('input', updateWordCount);
+  updateWordCount();
+
+  // ---------- voices ----------
+  function loadVoices(){
+    var all = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    var ja = all.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf('ja') === 0; });
+    var list = ja.length ? ja : all;
+    voiceSelect.innerHTML = '';
+    if (!list.length){
+      var opt = document.createElement('option');
+      opt.textContent = '既定の音声（ブラウザ標準）';
+      voiceSelect.appendChild(opt);
+      state.word.voice = null;
+      return;
+    }
+    list.forEach(function(v, i){
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = v.name + ' (' + v.lang + ')';
+      voiceSelect.appendChild(opt);
+    });
+    state.word.voice = list[0];
+    voiceSelect.onchange = function(){ state.word.voice = list[voiceSelect.value]; };
+  }
+  if (window.speechSynthesis){
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  } else {
+    setupError.innerHTML = '<div class="error-box">このブラウザは音声合成に対応していません。Google Chromeをお試しください。</div>';
+    startBtn.disabled = true;
+  }
+
+  function speakWord(text){
+    return new Promise(function(resolve){
+      if (!window.speechSynthesis){ resolve(); return; }
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      if (state.word.voice) u.voice = state.word.voice;
+      u.rate = 0.95;
+      u.onstart = function(){ miniAudio.classList.add('active'); };
+      var done = function(){ miniAudio.classList.remove('active'); resolve(); };
+      u.onend = done;
+      u.onerror = done;
+      window.speechSynthesis.speak(u);
+    });
+  }
+
+  testVoiceBtn.addEventListener('click', function(){
+    var words = parseWords(wordsInput.value);
+    var sample = words[0] || 'テスト';
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    speakWord(sample);
+  });
+
+  // ---------- word audio loop (runs concurrently with stroop trials) ----------
+  async function runWordAudio(){
+    for (var rep = 0; rep < state.word.reps; rep++){
+      for (var i = 0; i < state.order.length; i++){
+        if (cancelRequested) return;
+        await speakWord(state.order[i]);
+        if (cancelRequested) return;
+        await sleep(state.word.intervalSec * 1000);
+      }
+      if (cancelRequested) return;
+      if (rep < state.word.reps - 1){
+        await speakWord('もう一度、同じ単語を読み上げます');
+        if (cancelRequested) return;
+        await sleep(1200);
+      }
+    }
+    audioFinished = true;
+  }
+
+  // ---------- stroop trial generation ----------
+  function buildTrials(n){
+    var trials = [];
+    for (var i = 0; i < n; i++){
+      var wordItem = STROOP_ITEMS[Math.floor(Math.random() * 4)];
+      var colorItem = STROOP_ITEMS[Math.floor(Math.random() * 4)];
+      trials.push({
+        index: i + 1,
+        word: wordItem.word,
+        inkLabel: colorItem.label,
+        inkColor: colorItem.color,
+        inkKey: colorItem.key,
+        type: (wordItem.label === colorItem.label) ? 'congruent' : 'incongruent',
+        keyPressed: null,
+        rt: null,
+        correct: false
+      });
+    }
+    return trials;
+  }
+
+  function showStimulus(trial){
+    stroopWordEl.textContent = trial.word;
+    stroopWordEl.style.color = trial.inkColor;
+    stroopWordEl.classList.remove('hidden');
+  }
+  function hideStimulus(){
+    stroopWordEl.classList.add('hidden');
+    stroopWordEl.textContent = '';
+  }
+
+  var barRafId = null;
+  function startTimerBar(durationMs){
+    if (barRafId) cancelAnimationFrame(barRafId);
+    timerBar.style.transition = 'none';
+    timerBar.style.transform = 'scaleX(1)';
+    timerBar.className = 'timer-bar-fill';
+    var start = performance.now();
+    function tick(){
+      var elapsed = performance.now() - start;
+      var frac = Math.max(0, 1 - elapsed / durationMs);
+      timerBar.style.transform = 'scaleX(' + frac + ')';
+      if (frac <= 0.25 && frac > 0.1) timerBar.className = 'timer-bar-fill urgent';
+      if (frac <= 0.1) timerBar.className = 'timer-bar-fill critical';
+      if (frac > 0) barRafId = requestAnimationFrame(tick);
+    }
+    barRafId = requestAnimationFrame(tick);
+  }
+  function stopTimerBar(){
+    if (barRafId){ cancelAnimationFrame(barRafId); barRafId = null; }
+    timerBar.style.transition = 'none';
+    timerBar.style.transform = 'scaleX(0)';
+    timerBar.className = 'timer-bar-fill';
+  }
+
+  function waitForResponse(durationMs){
+    return new Promise(function(resolve){
+      var responded = false;
+      var timeoutId = null;
+      if (durationMs > 0) startTimerBar(durationMs);
+      function cleanup(){
+        document.removeEventListener('keydown', handler);
+        if (timeoutId) clearTimeout(timeoutId);
+        stopTimerBar();
+      }
+      function handler(e){
+        var k = (e.key || '').toLowerCase();
+        if (k === 'escape'){
+          if (responded) return;
+          responded = true;
+          cleanup();
+          cancelRequested = true;
+          resolve(null);
+          return;
+        }
+        var match = STROOP_ITEMS.filter(function(item){ return item.key.toLowerCase() === k; })[0];
+        if (match && !responded){
+          e.preventDefault();
+          responded = true;
+          cleanup();
+          resolve({ key: match.key, time: performance.now() });
+        }
+      }
+      document.addEventListener('keydown', handler);
+      if (durationMs > 0){
+        timeoutId = setTimeout(function(){
+          if (!responded){
+            responded = true;
+            cleanup();
+            resolve(null);
+          }
+        }, durationMs);
+      }
+    });
+  }
+
+  var feedbackTimer = null;
+  function showFeedback(correct){
+    if (feedbackTimer) clearTimeout(feedbackTimer);
+    feedbackFlash.textContent = correct ? '✓' : '✗';
+    feedbackFlash.className = 'feedback-flash show ' + (correct ? 'correct' : 'wrong');
+    feedbackTimer = setTimeout(function(){
+      feedbackFlash.className = 'feedback-flash';
+    }, 400);
+  }
+
+  async function runStroopTrials(){
+    for (var t = 0; t < state.trials.length; t++){
+      if (cancelRequested || audioFinished) break;
+      var trial = state.trials[t];
+      trialCounter.textContent = '試行 ' + trial.index + ' / ' + state.trials.length;
+      showStimulus(trial);
+      var onset = performance.now();
+      var response = await waitForResponse(state.stroop.stimDuration);
+      hideStimulus();
+      if (cancelRequested) return;
+      if (response){
+        trial.keyPressed = response.key;
+        trial.rt = Math.round(response.time - onset);
+        trial.correct = response.key === trial.inkKey;
+        showFeedback(trial.correct);
+      }
+      if (audioFinished) break;
+      await sleep(state.stroop.iti);
+    }
+    // trim unattempted trials from the data
+    state.trials = state.trials.filter(function(t){ return t.keyPressed !== null; });
+  }
+
+  async function countdown(){
+    var seq = ['3','2','1'];
+    for (var i = 0; i < seq.length; i++){
+      countdownEl.textContent = seq[i];
+      countdownEl.classList.remove('hidden');
+      await sleep(700);
+    }
+    countdownEl.classList.add('hidden');
+    countdownEl.textContent = '';
+  }
+
+  // ---------- start ----------
+  startBtn.addEventListener('click', function(){
+    var words = parseWords(wordsInput.value);
+    setupError.innerHTML = '';
+    if (words.length < 3){
+      setupError.innerHTML = '<div class="error-box">単語を3語以上入力してください。</div>';
+      return;
+    }
+
+    state.participant = {
+      id: document.getElementById('pId').value.trim(),
+      age: document.getElementById('pAge').value.trim(),
+      gender: document.getElementById('pGender').value,
+      group: pGroup.value,
+      languages: document.getElementById('pLanguages').value.trim()
+    };
+
+    state.stroop.numTrials = parseInt(document.getElementById('numTrials').value, 10);
+    state.stroop.stimDuration = parseInt(document.getElementById('stimDuration').value, 10);
+    state.stroop.iti = parseInt(document.getElementById('itiInput').value, 10);
+
+    state.word.words = words;
+    var iv = parseFloat(intervalInput.value);
+    state.word.intervalSec = isNaN(iv) ? 1.5 : Math.min(Math.max(iv, 0.5), 5);
+    var reps = parseInt(repsInput.value, 10);
+    state.word.reps = isNaN(reps) ? 2 : Math.min(Math.max(reps, 1), 5);
+
+    runDualTask();
+  });
+
+  async function runDualTask(){
+    cancelRequested = false;
+    audioFinished = false;
+    state.trials = buildTrials(state.stroop.numTrials);
+    state.order = shuffle(state.word.words);
+    setPhase('task');
+    trialCounter.textContent = '準備中…';
+    await countdown();
+    if (cancelRequested){ goToSetup(); return; }
+
+    await Promise.all([ runStroopTrials(), runWordAudio() ]);
+
+    if (cancelRequested){ goToSetup(); return; }
+    setPhase('recall');
+    buildReorderTask();
+  }
+
+  function goToSetup(){
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    miniAudio.classList.remove('active');
+    hideStimulus();
+    setPhase('setup');
+  }
+
+  abortBtn.addEventListener('click', function(){
+    cancelRequested = true;
+    goToSetup();
+  });
+
+  // ---------- reorder task ----------
+  var reorderState = { slots:[], pool:[], selected:null };
+
+  function buildReorderTask(){
+    // slots array: one entry per word position, value = word placed there or null
+    reorderState.slots = state.order.map(function(){ return null; });
+    // pool: shuffled copy of the words (different shuffle from heard order)
+    var poolWords = shuffle(state.order.slice());
+    reorderState.pool = poolWords.map(function(w){ return { word:w, placed:false }; });
+    reorderState.selected = null;
+    renderReorder();
+  }
+
+  function renderReorder(){
+    // --- slots ---
+    slotsGrid.innerHTML = '';
+    reorderState.slots.forEach(function(word, i){
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      var num = document.createElement('span');
+      num.className = 'slot-num';
+      num.textContent = (i+1) + '番目';
+      var box = document.createElement('div');
+      box.className = 'slot-box' + (word ? ' filled' : '');
+      if(word){
+        var chip = document.createElement('span');
+        chip.className = 'word-chip';
+        chip.textContent = word;
+        box.appendChild(chip);
+        box.title = 'クリックで取り消す';
+      }
+      box.addEventListener('click', function(){ onSlotClick(i); });
+      slot.appendChild(num);
+      slot.appendChild(box);
+      slotsGrid.appendChild(slot);
+    });
+
+    // --- pool ---
+    poolGrid.innerHTML = '';
+    reorderState.pool.forEach(function(item, i){
+      if(item.placed) return;
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'pool-chip' + (reorderState.selected === i ? ' selected' : '');
+      chip.textContent = item.word;
+      chip.addEventListener('click', function(){ onPoolClick(i); });
+      poolGrid.appendChild(chip);
+    });
+  }
+
+  function onPoolClick(i){
+    if(reorderState.selected === i){
+      reorderState.selected = null;
+    } else {
+      reorderState.selected = i;
+    }
+    renderReorder();
+  }
+
+  function onSlotClick(slotIdx){
+    var currentWord = reorderState.slots[slotIdx];
+
+    // if slot is filled — unplace it back to pool
+    if(currentWord){
+      reorderState.slots[slotIdx] = null;
+      var poolItem = reorderState.pool.filter(function(p){ return p.word === currentWord && p.placed; })[0];
+      if(poolItem) poolItem.placed = false;
+      reorderState.selected = null;
+      renderReorder();
+      return;
+    }
+
+    // if a pool word is selected, place it
+    if(reorderState.selected !== null){
+      var item = reorderState.pool[reorderState.selected];
+      reorderState.slots[slotIdx] = item.word;
+      item.placed = true;
+      reorderState.selected = null;
+      renderReorder();
+    }
+  }
+
+  document.getElementById('clearOrderBtn').addEventListener('click', function(){
+    reorderState.slots = reorderState.slots.map(function(){ return null; });
+    reorderState.pool.forEach(function(p){ p.placed = false; });
+    reorderState.selected = null;
+    renderReorder();
+  });
+
+  submitBtn.addEventListener('click', function(){
+    var positionCorrect = 0;
+    var rows = state.order.map(function(word, i){
+      var ans = reorderState.slots[i] || '';
+      var isPosCorrect = ans === word;
+      if(isPosCorrect) positionCorrect++;
+      return { position:i+1, correct:word, answer:ans, isPosCorrect:isPosCorrect };
+    });
+    // "any order" = how many placed words are actually in the correct word list
+    var correctSet = {};
+    state.order.forEach(function(w){ correctSet[w] = true; });
+    var anyCorrect = reorderState.slots.filter(function(w){ return w && correctSet[w]; }).length;
+    state.recallRows = rows;
+    state.recallSummary = { positionCorrect:positionCorrect, recalledCount:anyCorrect, total:state.order.length };
+    showResults();
+  });
+
+  // ---------- results ----------
+  function computeStroopSummary(trials){
+    var correctTrials = trials.filter(function(t){ return t.correct; });
+    var congruentCorrect = correctTrials.filter(function(t){ return t.type === 'congruent'; });
+    var incongruentCorrect = correctTrials.filter(function(t){ return t.type === 'incongruent'; });
+    function meanRT(arr){
+      var withRT = arr.filter(function(t){ return t.rt != null; });
+      if (!withRT.length) return null;
+      var sum = withRT.reduce(function(a, t){ return a + t.rt; }, 0);
+      return Math.round(sum / withRT.length);
+    }
+    var meanAll = meanRT(correctTrials);
+    var meanCong = meanRT(congruentCorrect);
+    var meanIncong = meanRT(incongruentCorrect);
+    return {
+      accuracy: trials.length ? Math.round((correctTrials.length / trials.length) * 1000) / 10 : 0,
+      meanRT: meanAll,
+      meanCongruent: meanCong,
+      meanIncongruent: meanIncong,
+      stroopEffect: (meanCong != null && meanIncong != null) ? (meanIncong - meanCong) : null,
+      correctCount: correctTrials.length,
+      total: trials.length
+    };
+  }
+
+  function fmt(v, unit){
+    return v == null ? '—' : (v + (unit || ''));
+  }
+
+  function showResults(){
+    var p = state.participant;
+    participantLine.innerHTML =
+      'ID: <span>' + (p.id || '—') + '</span> ・ 年齢: <span>' + (p.age || '—') +
+      '</span> ・ 性別: <span>' + (p.gender || '—') + '</span> ・ グループ: <span>' + (p.group || '—') +
+      (p.group === 'Bilingual' ? '</span> ・ 言語: <span>' + (p.languages || '—') : '') + '</span>';
+
+    var summary = computeStroopSummary(state.trials);
+    document.getElementById('sAccuracy').textContent = fmt(summary.accuracy, '%');
+    document.getElementById('sMeanRT').textContent = fmt(summary.meanRT);
+    document.getElementById('sEffect').textContent = fmt(summary.stroopEffect);
+    document.getElementById('sCongruent').textContent = fmt(summary.meanCongruent);
+    document.getElementById('sIncongruent').textContent = fmt(summary.meanIncongruent);
+    document.getElementById('sCorrect').textContent = summary.correctCount + ' / ' + summary.total;
+
+    stroopBody.innerHTML = '';
+    state.trials.forEach(function(t){
+      var tr = document.createElement('tr');
+      var cells = [
+        t.index,
+        t.word,
+        t.inkLabel,
+        t.type === 'congruent' ? '一致' : '不一致',
+        t.keyPressed || '—',
+        t.rt == null ? '—' : t.rt
+      ];
+      cells.forEach(function(val, idx){
+        var td = document.createElement('td');
+        if (idx === 0 || idx === 5) td.className = 'mono';
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      var tdMark = document.createElement('td');
+      var mark = document.createElement('span');
+      mark.className = 'mark ' + (t.correct ? 'ok' : 'no');
+      mark.textContent = t.correct ? '✓' : '✗';
+      tdMark.appendChild(mark);
+      tr.appendChild(tdMark);
+      stroopBody.appendChild(tr);
+    });
+
+    var rs = state.recallSummary;
+    document.getElementById('wPos').textContent = rs.positionCorrect + '/' + rs.total;
+    document.getElementById('wAny').textContent = rs.recalledCount + '/' + rs.total;
+
+    recallBody.innerHTML = '';
+    state.recallRows.forEach(function(r){
+      var tr = document.createElement('tr');
+      var tdPos = document.createElement('td'); tdPos.className = 'mono'; tdPos.textContent = r.position;
+      var tdCorrect = document.createElement('td'); tdCorrect.textContent = r.correct;
+      var tdAnswer = document.createElement('td');
+      tdAnswer.innerHTML = r.answer === '' ? '<span class="blank">未回答</span>' : '';
+      if (r.answer !== '') tdAnswer.textContent = r.answer;
+      var tdMark = document.createElement('td');
+      var mark = document.createElement('span');
+      mark.className = 'mark ' + (r.isPosCorrect ? 'ok' : 'no');
+      mark.textContent = r.isPosCorrect ? '✓' : '✗';
+      tdMark.appendChild(mark);
+      tr.appendChild(tdPos); tr.appendChild(tdCorrect); tr.appendChild(tdAnswer); tr.appendChild(tdMark);
+      recallBody.appendChild(tr);
+    });
+
+    setPhase('results');
+  }
+
+  // ---------- CSV export ----------
+  function csvSafe(v){
+    v = (v === undefined || v === null) ? '' : String(v);
+    if (v.indexOf(',') > -1 || v.indexOf('"') > -1 || v.indexOf('\n') > -1){
+      v = '"' + v.replace(/"/g, '""') + '"';
+    }
+    return v;
+  }
+
+  function buildCSV(){
+    var p = state.participant;
+    var summary = computeStroopSummary(state.trials);
+    var lines = [];
+    lines.push('Participant ID,' + csvSafe(p.id));
+    lines.push('Age,' + csvSafe(p.age));
+    lines.push('Gender,' + csvSafe(p.gender));
+    lines.push('Language Group,' + csvSafe(p.group));
+    lines.push('Languages Spoken,' + csvSafe(p.languages));
+    lines.push('Date/Time,' + csvSafe(new Date().toLocaleString()));
+    lines.push('');
+    lines.push('STROOP SUMMARY');
+    lines.push('Accuracy (%),' + csvSafe(summary.accuracy));
+    lines.push('Mean RT (ms),' + csvSafe(summary.meanRT));
+    lines.push('Congruent RT (ms),' + csvSafe(summary.meanCongruent));
+    lines.push('Incongruent RT (ms),' + csvSafe(summary.meanIncongruent));
+    lines.push('Stroop Effect (ms),' + csvSafe(summary.stroopEffect));
+    lines.push('Correct Trials,' + csvSafe(summary.correctCount));
+    lines.push('Total Trials,' + csvSafe(summary.total));
+    lines.push('');
+    lines.push('STROOP TRIALS');
+    lines.push('#,Word,Ink Color,Type,Key Pressed,RT (ms),Correct');
+    state.trials.forEach(function(t){
+      lines.push([t.index, t.word, t.inkLabel, t.type, t.keyPressed || '', t.rt == null ? '' : t.rt, t.correct ? 'Yes' : 'No'].map(csvSafe).join(','));
+    });
+    lines.push('');
+    lines.push('WORD REORDER SUMMARY');
+    lines.push('Position-Correct,' + csvSafe(state.recallSummary.positionCorrect + '/' + state.recallSummary.total));
+    lines.push('Words-Identified (any order),' + csvSafe(state.recallSummary.recalledCount + '/' + state.recallSummary.total));
+    lines.push('');
+    lines.push('WORD REORDER TRIALS');
+    lines.push('Position,Correct Word,Answer,Position Correct');
+    state.recallRows.forEach(function(r){
+      lines.push([r.position, r.correct, r.answer, r.isPosCorrect ? 'Yes' : 'No'].map(csvSafe).join(','));
+    });
+    return lines.join('\n');
+  }
+
+  exportBtn.addEventListener('click', function(){
+    var csv = buildCSV();
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'dual_task_' + (state.participant.id || 'participant') + '_' + Date.now() + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  nextBtn.addEventListener('click', function(){
+    document.getElementById('pId').value = '';
+    document.getElementById('pAge').value = '';
+    document.getElementById('pGender').value = '';
+    document.getElementById('pLanguages').value = '';
+    setPhase('setup');
+  });
+
+})();
+</script>
+
+</body>
+</html>
